@@ -1,6 +1,7 @@
 from fastapi import APIRouter
 from app.models.request_models import EmailAnalysisRequest
 from app.models.response_models import EmailAnalysisResponse
+from app.services.phishing_rules import analyze_email_rules
 
 router = APIRouter()
 
@@ -12,16 +13,18 @@ def health_check():
 
 @router.post("/analyze-email", response_model=EmailAnalysisResponse)
 def analyze_email(request: EmailAnalysisRequest):
+    verdict, confidence, reasons, indicators, recommended_action = analyze_email_rules(
+        sender=request.sender,
+        subject=request.subject,
+        body=request.body
+    )
+
     return EmailAnalysisResponse(
-        verdict="suspicious",
-        confidence="medium",
-        reasons=[
-            "Placeholder analysis has not been implemented yet."
-        ],
-        indicators=[
-            "analysis_pending"
-        ],
-        recommended_action="Review the email manually before taking any action.",
-        llm_notes="LLM analysis is not connected yet.",
-        model_used="not_connected"
+        verdict=verdict,
+        confidence=confidence,
+        reasons=reasons,
+        indicators=indicators,
+        recommended_action=recommended_action,
+        llm_notes="LLM analysis is not connected yet. Current result is based on rule-based checks.",
+        model_used="rule_based_v1"
     )
