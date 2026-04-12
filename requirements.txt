@@ -1,0 +1,10 @@
+fastapi
+uvicorn[standard]
+pydantic
+python-dotenv
+pytest
+httpx
+email-validator
+tldextract
+beautifulsoup4
+openai
