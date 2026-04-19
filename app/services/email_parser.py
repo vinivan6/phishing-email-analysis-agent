@@ -1,6 +1,7 @@
 import re
 from typing import Dict, List, Optional
 
+
 URL_PATTERN = r"https?://[^\s]+"
 
 SUSPICIOUS_ATTACHMENT_EXTENSIONS = {
@@ -15,10 +16,12 @@ SUSPICIOUS_ATTACHMENT_EXTENSIONS = {
     ".iso"
 }
 
+
 def extract_urls(text: str) -> List[str]:
     if not text:
         return []
     return re.findall(URL_PATTERN, text)
+
 
 def normalize_headers(headers: Optional[str]) -> Dict[str, str]:
     if not headers:
@@ -113,3 +116,14 @@ def extract_ip_addresses(headers: Optional[str]) -> List[str]:
         return []
 
     return re.findall(r"\b(?:\d{1,3}\.){3}\d{1,3}\b", headers)
+
+
+def extract_message_id(headers: Optional[str]) -> Optional[str]:
+    if not headers:
+        return None
+
+    match = re.search(r"^message-id:\s*<([^>]+)>", headers, re.IGNORECASE | re.MULTILINE)
+    if match:
+        return match.group(1).strip()
+
+    return None
