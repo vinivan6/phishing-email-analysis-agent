@@ -24,6 +24,17 @@ class ReputationResults(BaseModel):
     ip_addresses: List[ReputationEntry] = Field(default_factory=list)
 
 
+class ReputationSummary(BaseModel):
+    malicious_count: int = 0
+    suspicious_count: int = 0
+    informational_count: int = 0
+    clean_count: int = 0
+    no_record_count: int = 0
+    unavailable_count: int = 0
+    overall: str = "unknown"
+    summary_note: str = ""
+
+
 class EmailAnalysisResponse(BaseModel):
     verdict: str = Field(..., description="Overall phishing verdict")
     confidence: str = Field(..., description="Confidence level of the analysis")
@@ -34,3 +45,4 @@ class EmailAnalysisResponse(BaseModel):
     model_used: str = Field(..., description="Model used for analysis")
     artifacts: ExtractedArtifacts = Field(..., description="Extracted artifacts from the email")
     reputation: ReputationResults = Field(..., description="Threat-intelligence enrichment results")
+    reputation_summary: ReputationSummary = Field(..., description="Normalized summary of reputation results")

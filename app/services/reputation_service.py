@@ -2,7 +2,7 @@ import requests
 from urllib.parse import quote
 
 from app.config import settings
-from app.models.response_models import ReputationEntry, ReputationResults
+from app.models.response_models import ReputationEntry, ReputationResults, ReputationSummary
 
 
 VT_DOMAIN_REPORT = "https://www.virustotal.com/api/v3/domains/"
@@ -25,8 +25,8 @@ def check_urlhaus_url(url: str) -> ReputationEntry:
         return ReputationEntry(
             value=url,
             source="URLhaus",
-            verdict="unknown",
-            details="Missing URLhaus Auth-Key"
+            verdict="error",
+            details="Reputation lookup unavailable: missing URLhaus Auth-Key"
         )
 
     try:
@@ -55,22 +55,22 @@ def check_urlhaus_url(url: str) -> ReputationEntry:
             return ReputationEntry(
                 value=url,
                 source="URLhaus",
-                verdict="clean",
-                details="No URLhaus match for this URL"
+                verdict="not_found",
+                details="No reputation record found in URLhaus"
             )
 
         return ReputationEntry(
             value=url,
             source="URLhaus",
-            verdict="unknown",
-            details=f"URLhaus status: {status}"
+            verdict="error",
+            details=f"Reputation lookup unavailable: URLhaus status {status}"
         )
     except Exception as exc:
         return ReputationEntry(
             value=url,
             source="URLhaus",
             verdict="error",
-            details=str(exc)
+            details=f"Reputation lookup unavailable: {exc}"
         )
 
 
@@ -79,8 +79,8 @@ def check_abuseipdb_ip(ip: str) -> ReputationEntry:
         return ReputationEntry(
             value=ip,
             source="AbuseIPDB",
-            verdict="unknown",
-            details="Missing AbuseIPDB API key"
+            verdict="error",
+            details="Reputation lookup unavailable: missing AbuseIPDB API key"
         )
 
     try:
@@ -117,7 +117,7 @@ def check_abuseipdb_ip(ip: str) -> ReputationEntry:
             value=ip,
             source="AbuseIPDB",
             verdict="error",
-            details=str(exc)
+            details=f"Reputation lookup unavailable: {exc}"
         )
 
 
@@ -126,8 +126,8 @@ def check_virustotal_domain(domain: str) -> ReputationEntry:
         return ReputationEntry(
             value=domain,
             source="VirusTotal",
-            verdict="unknown",
-            details="Missing VirusTotal API key"
+            verdict="error",
+            details="Reputation lookup unavailable: missing VirusTotal API key"
         )
 
     try:
@@ -159,7 +159,7 @@ def check_virustotal_domain(domain: str) -> ReputationEntry:
             value=domain,
             source="VirusTotal",
             verdict="error",
-            details=str(exc)
+            details=f"Reputation lookup unavailable: {exc}"
         )
 
 
@@ -168,8 +168,8 @@ def check_otx_domain(domain: str) -> ReputationEntry:
         return ReputationEntry(
             value=domain,
             source="AlienVault OTX",
-            verdict="unknown",
-            details="Missing OTX API key"
+            verdict="error",
+            details="Reputation lookup unavailable: missing OTX API key"
         )
 
     try:
@@ -183,8 +183,10 @@ def check_otx_domain(domain: str) -> ReputationEntry:
         pulse_count = len(data.get("pulse_info", {}).get("pulses", []))
         malware_count = data.get("malware", {}).get("count", 0)
 
-        if pulse_count > 0 or malware_count > 0:
+        if pulse_count >= 20:
             verdict = "suspicious"
+        elif pulse_count > 0 or malware_count > 0:
+            verdict = "informational"
         else:
             verdict = "clean"
 
@@ -199,7 +201,7 @@ def check_otx_domain(domain: str) -> ReputationEntry:
             value=domain,
             source="AlienVault OTX",
             verdict="error",
-            details=str(exc)
+            details=f"Reputation lookup unavailable: {exc}"
         )
 
 
@@ -208,8 +210,8 @@ def check_otx_ip(ip: str) -> ReputationEntry:
         return ReputationEntry(
             value=ip,
             source="AlienVault OTX",
-            verdict="unknown",
-            details="Missing OTX API key"
+            verdict="error",
+            details="Reputation lookup unavailable: missing OTX API key"
         )
 
     try:
@@ -223,8 +225,10 @@ def check_otx_ip(ip: str) -> ReputationEntry:
         pulse_count = len(data.get("pulse_info", {}).get("pulses", []))
         malware_count = data.get("malware", {}).get("count", 0)
 
-        if pulse_count > 0 or malware_count > 0:
+        if pulse_count >= 20:
             verdict = "suspicious"
+        elif pulse_count > 0 or malware_count > 0:
+            verdict = "informational"
         else:
             verdict = "clean"
 
@@ -239,7 +243,7 @@ def check_otx_ip(ip: str) -> ReputationEntry:
             value=ip,
             source="AlienVault OTX",
             verdict="error",
-            details=str(exc)
+            details=f"Reputation lookup unavailable: {exc}"
         )
 
 
@@ -258,3 +262,47 @@ def enrich_reputation(urls: list[str], domains: list[str], ip_addresses: list[st
         results.ip_addresses.append(check_otx_ip(ip))
 
     return results
+
+
+def summarize_reputation(reputation: ReputationResults) -> ReputationSummary:
+    all_entries = reputation.urls + reputation.domains + reputation.ip_addresses
+
+    summary = ReputationSummary()
+
+    for entry in all_entries:
+        if entry.verdict == "malicious":
+            summary.malicious_count += 1
+        elif entry.verdict == "suspicious":
+            summary.suspicious_count += 1
+        elif entry.verdict == "informational":
+            summary.informational_count += 1
+        elif entry.verdict == "clean":
+            summary.clean_count += 1
+        elif entry.verdict == "not_found":
+            summary.no_record_count += 1
+        elif entry.verdict == "error":
+            summary.unavailable_count += 1
+
+    if summary.malicious_count >= 2:
+        summary.overall = "malicious"
+        summary.summary_note = "Multiple reputation sources flagged related infrastructure as malicious."
+    elif summary.malicious_count == 1:
+        summary.overall = "high_risk"
+        summary.summary_note = "At least one reputation source flagged related infrastructure as malicious."
+    elif summary.suspicious_count >= 2:
+        summary.overall = "suspicious"
+        summary.summary_note = "Multiple reputation sources returned suspicious findings."
+    elif summary.suspicious_count >= 1 or summary.informational_count >= 1:
+        summary.overall = "caution"
+        summary.summary_note = "Some reputation sources returned cautionary or informational findings."
+    elif summary.unavailable_count >= 1:
+        summary.overall = "unavailable"
+        summary.summary_note = "Some external reputation checks were unavailable."
+    elif summary.no_record_count >= 1:
+        summary.overall = "no_record"
+        summary.summary_note = "Some reputation sources had no record for related infrastructure."
+    else:
+        summary.overall = "clean"
+        summary.summary_note = "No strong reputation-based threat signal was found."
+
+    return summary

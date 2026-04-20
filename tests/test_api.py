@@ -36,6 +36,7 @@ def test_analyze_email_endpoint_returns_expected_structure():
     assert "model_used" in data
     assert "artifacts" in data
     assert "reputation" in data
+    assert "reputation_summary" in data
 
     assert "urls" in data["artifacts"]
     assert "domains" in data["artifacts"]
@@ -47,3 +48,6 @@ def test_analyze_email_endpoint_returns_expected_structure():
     assert "urls" in data["reputation"]
     assert "domains" in data["reputation"]
     assert "ip_addresses" in data["reputation"]
+
+    assert "overall" in data["reputation_summary"]
+    assert "summary_note" in data["reputation_summary"]
