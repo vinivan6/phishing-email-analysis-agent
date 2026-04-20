@@ -8,3 +8,4 @@ email-validator
 tldextract
 beautifulsoup4
 openai
+requests

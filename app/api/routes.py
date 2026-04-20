@@ -3,6 +3,7 @@ from app.models.request_models import EmailAnalysisRequest
 from app.models.response_models import EmailAnalysisResponse
 from app.services.artifact_extractor import build_artifacts
 from app.services.phishing_rules import analyze_email_rules
+from app.services.reputation_service import enrich_reputation
 
 router = APIRouter()
 
@@ -31,13 +32,20 @@ def analyze_email(request: EmailAnalysisRequest):
         attachments=request.attachments
     )
 
+    reputation = enrich_reputation(
+        urls=artifacts.urls,
+        domains=artifacts.domains,
+        ip_addresses=artifacts.ip_addresses
+    )
+
     return EmailAnalysisResponse(
         verdict=verdict,
         confidence=confidence,
         reasons=reasons,
         indicators=indicators,
         recommended_action=recommended_action,
-        llm_notes="LLM analysis is not connected yet. Current result is based on rule-based checks.",
-        model_used="rule_based_v8",
-        artifacts=artifacts
+        llm_notes="LLM analysis is not connected yet. Current result is based on rule-based checks plus threat-intelligence enrichment.",
+        model_used="rule_based_v9_v10_Otx",
+        artifacts=artifacts,
+        reputation=reputation
     )

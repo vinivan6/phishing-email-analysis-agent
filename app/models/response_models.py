@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 from pydantic import BaseModel, Field
 
 
@@ -11,6 +11,19 @@ class ExtractedArtifacts(BaseModel):
     amounts: List[str] = Field(default_factory=list, description="Extracted monetary amounts from subject/body")
 
 
+class ReputationEntry(BaseModel):
+    value: str
+    source: str
+    verdict: str
+    details: Optional[str] = None
+
+
+class ReputationResults(BaseModel):
+    urls: List[ReputationEntry] = Field(default_factory=list)
+    domains: List[ReputationEntry] = Field(default_factory=list)
+    ip_addresses: List[ReputationEntry] = Field(default_factory=list)
+
+
 class EmailAnalysisResponse(BaseModel):
     verdict: str = Field(..., description="Overall phishing verdict")
     confidence: str = Field(..., description="Confidence level of the analysis")
@@ -20,3 +33,4 @@ class EmailAnalysisResponse(BaseModel):
     llm_notes: str = Field(..., description="Additional LLM reasoning notes")
     model_used: str = Field(..., description="Model used for analysis")
     artifacts: ExtractedArtifacts = Field(..., description="Extracted artifacts from the email")
+    reputation: ReputationResults = Field(..., description="Threat-intelligence enrichment results")
