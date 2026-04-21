@@ -211,6 +211,65 @@ def render_action_box(verdict: str, action_text: str):
         unsafe_allow_html=True
     )
 
+def render_wrapped_list(title: str, items: list[str]):
+    st.markdown(f"**{title}**")
+
+    if not items:
+        st.write("None")
+        return
+
+    for item in items:
+        st.markdown(
+            f"""
+            <div style="
+                padding: 8px 10px;
+                margin-bottom: 8px;
+                border-radius: 8px;
+                background-color: #111827;
+                border: 1px solid #374151;
+                color: #e5e7eb;
+                font-size: 0.92rem;
+                line-height: 1.4;
+                word-break: break-all;
+                overflow-wrap: anywhere;
+                white-space: pre-wrap;
+            ">
+                {item}
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+def render_wrapped_links(title: str, items: list[str]):
+    st.markdown(f"**{title}**")
+
+    if not items:
+        st.write("None")
+        return
+
+    for item in items:
+        st.markdown(
+            f"""
+            <div style="
+                padding: 8px 10px;
+                margin-bottom: 8px;
+                border-radius: 8px;
+                background-color: #111827;
+                border: 1px solid #374151;
+                font-size: 0.92rem;
+                line-height: 1.4;
+                word-break: break-all;
+                overflow-wrap: anywhere;
+                white-space: pre-wrap;
+            ">
+                <a href="{item}" target="_blank" style="color: #93c5fd; text-decoration: none;">
+                    {item}
+                </a>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
 
 def render_results(data: dict):
     verdict = data.get("verdict", "unknown")
@@ -270,7 +329,19 @@ def render_results(data: dict):
     )
 
     with tab1:
-        st.json(data.get("artifacts", {}))
+        artifacts = data.get("artifacts", {})
+
+        col1, col2 = st.columns(2)
+
+        with col1:
+            render_wrapped_links("URLs", artifacts.get("urls", []))
+            render_wrapped_list("Domains", artifacts.get("domains", []))
+            render_wrapped_list("IP Addresses", artifacts.get("ip_addresses", []))
+
+        with col2:
+            render_wrapped_list("Attachments", artifacts.get("attachments", []))
+            render_wrapped_list("Phone Numbers", artifacts.get("phone_numbers", []))
+            render_wrapped_list("Amounts", artifacts.get("amounts", []))
 
     with tab2:
         st.json(data.get("reputation", {}))

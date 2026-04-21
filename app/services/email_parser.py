@@ -1,4 +1,5 @@
 import re
+import ipaddress
 from typing import Dict, List, Optional
 from urllib.parse import urlparse
 
@@ -19,7 +20,7 @@ SUSPICIOUS_ATTACHMENT_EXTENSIONS = {
 
 PHONE_PATTERN = r"(?:\+?\d{1,2}[\s\-]?)?(?:\(?\d{3}\)?[\s\-]?)\d{3}[\s\-]?\d{4}"
 AMOUNT_PATTERN = r"(?:USD|EUR|GBP|CAD|AUD|INR|PHP|\$|€|£|₹|₱)\s?\d+(?:[.,]\d{1,2})?"
-
+IPV4_CANDIDATE_PATTERN = re.compile(r"\b(?:\d{1,3}\.){3}\d{1,3}\b")
 
 def extract_urls(text: str) -> List[str]:
     if not text:
@@ -115,12 +116,51 @@ def extract_reply_to(headers: Optional[str]) -> Optional[str]:
     return None
 
 
+def _extract_valid_ipv4s(text: str) -> List[str]:
+    valid_ips: List[str] = []
+
+    for candidate in IPV4_CANDIDATE_PATTERN.findall(text):
+        try:
+            ip_obj = ipaddress.ip_address(candidate)
+
+            if ip_obj.version != 4:
+                continue
+
+            if (
+                ip_obj.is_loopback
+                or ip_obj.is_multicast
+                or ip_obj.is_reserved
+                or ip_obj.is_unspecified
+            ):
+                continue
+
+            if candidate not in valid_ips:
+                valid_ips.append(candidate)
+
+        except ValueError:
+            continue
+
+    return valid_ips
+
+
 def extract_ip_addresses(headers: Optional[str]) -> List[str]:
     if not headers:
         return []
 
-    return re.findall(r"\b(?:\d{1,3}\.){3}\d{1,3}\b", headers)
+    relevant_lines = []
+    for line in headers.splitlines():
+        lower_line = line.lower().strip()
+        if (
+            lower_line.startswith("received:")
+            or lower_line.startswith("x-originating-ip:")
+            or lower_line.startswith("x-forwarded-for:")
+        ):
+            relevant_lines.append(line)
 
+    if not relevant_lines:
+        return []
+
+    return _extract_valid_ipv4s("\n".join(relevant_lines))
 
 def extract_message_id(headers: Optional[str]) -> Optional[str]:
     if not headers:
