@@ -64,3 +64,10 @@ Semantic Classification
 Decision Engine
         ↓
 Final Verdict + Recommended Action
+```
+## Known Limitations
+- `.msg` not supported yet
+- LLM explanation not integrated yet
+- IP extraction from complex headers may still include noisy values
+- Threat-intel feeds can produce occasional noisy results
+- IP extraction from complex headers may still include noisy but syntactically valid IP-like values
