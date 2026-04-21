@@ -37,6 +37,8 @@ def test_analyze_email_endpoint_returns_expected_structure():
     assert "artifacts" in data
     assert "reputation" in data
     assert "reputation_summary" in data
+    assert "semantic_category" in data
+    assert "semantic_confidence" in data
 
     assert "urls" in data["artifacts"]
     assert "domains" in data["artifacts"]

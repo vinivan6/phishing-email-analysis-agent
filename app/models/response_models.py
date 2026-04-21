@@ -40,6 +40,8 @@ class EmailAnalysisResponse(BaseModel):
     confidence: str = Field(..., description="Confidence level of the analysis")
     reasons: List[str] = Field(..., description="Why the email received this verdict")
     indicators: List[str] = Field(..., description="Detected phishing indicators")
+    semantic_category: str = Field(..., description="Semantic classification category")
+    semantic_confidence: str = Field(..., description="Confidence of semantic classification")
     recommended_action: str = Field(..., description="Recommended next action")
     llm_notes: str = Field(..., description="Additional LLM reasoning notes")
     model_used: str = Field(..., description="Model used for analysis")
