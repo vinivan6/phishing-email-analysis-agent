@@ -49,15 +49,15 @@ A Python and FastAPI-based cybersecurity application that analyzes suspicious em
 ## Screenshots
 
 ### Home Page
-![UI Homepage](docs/UI_Homepage.png)
+![UI Homepage](docs/images/UI_Homepage.png)
 
 ### Manual Entry
-![UI Manual Entry](docs/UI_Homepage_manualEntry.png)
+![UI Manual Entry](docs/images/UI_Homepage_manualEntry.png)
 
 ### Example Results
-![UI Analysis Result 1](docs/UI_Analysis_result1.png)
-![UI Analysis Result 2](docs/UI_Analysis_result2.png)
-![UI Analysis Result 3](docs/UI_Analysis_result3.png)
+![UI Analysis Result 1](docs/images/UI_Analysis_result1.png)
+![UI Analysis Result 2](docs/images/UI_Analysis_result2.png)
+![UI Analysis Result 3](docs/images/UI_Analysis_result3.png)
 
 ## Architecture
 
